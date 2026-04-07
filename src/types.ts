@@ -127,6 +127,7 @@ export interface ExecuteWebhookParams {
   avatar_url?: string;
   tts?: boolean;
   embeds?: DiscordEmbed[];
+  files?: File[];
   allowed_mentions?: AllowedMentions;
   flags?: number;
   thread_name?: string;

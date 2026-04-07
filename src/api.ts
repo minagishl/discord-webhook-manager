@@ -103,14 +103,28 @@ export async function executeWebhook(
   if (wait) url.searchParams.set('wait', 'true');
   if (params.thread_id) {
     url.searchParams.set('thread_id', params.thread_id);
-    delete params.thread_id;
   }
 
-  const res = await fetch(url.toString(), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params),
-  });
+  const { thread_id: _threadId, files, ...payload } = params;
+
+  let res: Response;
+  if (files && files.length > 0) {
+    const formData = new FormData();
+    formData.set('payload_json', JSON.stringify(payload));
+    files.forEach((file, index) => {
+      formData.append(`files[${index}]`, file, file.name);
+    });
+    res = await fetch(url.toString(), {
+      method: 'POST',
+      body: formData,
+    });
+  } else {
+    res = await fetch(url.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  }
 
   if (wait) {
     return handleResponse<DiscordMessage>(res);

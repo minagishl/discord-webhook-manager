@@ -27,6 +27,7 @@ export function SendMessagePanel({ webhook }: SendMessagePanelProps) {
   const [tts, setTts] = useState(false);
   const [threadId, setThreadId] = useState('');
   const [wait, setWait] = useState(true);
+  const [files, setFiles] = useState<File[]>([]);
 
   // Embed builder
   const [embeds, setEmbeds] = useState<DiscordEmbed[]>([]);
@@ -90,6 +91,12 @@ export function SendMessagePanel({ webhook }: SendMessagePanelProps) {
     setEmbeds((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  function handleFileChange(e: Event) {
+    const input = e.target as HTMLInputElement;
+    const selectedFiles = input.files ? Array.from(input.files) : [];
+    setFiles(selectedFiles);
+  }
+
   function cleanEmbed(embed: DiscordEmbed): DiscordEmbed {
     const result: DiscordEmbed = {};
     if (embed.title?.trim()) result.title = embed.title.trim();
@@ -141,9 +148,14 @@ export function SendMessagePanel({ webhook }: SendMessagePanelProps) {
         : embeds;
 
     if (allEmbeds.length > 0) params.embeds = allEmbeds;
+    if (files.length > 0) params.files = files;
 
-    if (!params.content && (!params.embeds || params.embeds.length === 0)) {
-      setError('You must provide at least content or an embed.');
+    if (
+      !params.content &&
+      (!params.embeds || params.embeds.length === 0) &&
+      files.length === 0
+    ) {
+      setError('You must provide content, an embed, or at least one file.');
       return;
     }
 
@@ -161,6 +173,7 @@ export function SendMessagePanel({ webhook }: SendMessagePanelProps) {
         setSuccessMsg('Message sent (no response body).');
       }
       setContent('');
+      setFiles([]);
     } catch (e) {
       setError(getErrorMessage(e));
     } finally {
@@ -304,6 +317,28 @@ export function SendMessagePanel({ webhook }: SendMessagePanelProps) {
           <div class="text-right text-xs text-[#4e5058] mt-1">
             {content.length}/2000
           </div>
+        </FormField>
+
+        <FormField
+          label="Attachments"
+          hint="Upload files to send with the message"
+        >
+          <input
+            type="file"
+            multiple
+            onChange={handleFileChange}
+            disabled={loading}
+            class="w-full bg-[#1e1f22] border border-[#1e1f22] text-[#dbdee1] rounded-sm px-3 py-2 text-sm file:mr-3 file:px-3 file:py-1.5 file:rounded file:border-0 file:bg-[#5865f2] file:text-white file:text-xs file:font-semibold hover:file:bg-[#4752c4] disabled:opacity-50"
+          />
+          {files.length > 0 && (
+            <div class="mt-2 text-xs text-[#b5bac1] space-y-1">
+              {files.map((file, index) => (
+                <div key={`${file.name}-${index}`} class="truncate">
+                  {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                </div>
+              ))}
+            </div>
+          )}
         </FormField>
 
         {/* Embed builder */}
